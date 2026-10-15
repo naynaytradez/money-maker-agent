@@ -1,0 +1,133 @@
+name: Money Maker Agent - 24/7 Cloud Automation
+
+# Runs every 6 hours (configurable) for continuous revenue generation
+on:
+  schedule:
+    # Every 6 hours at minute 0
+    - cron: '0 */6 * * *'
+  workflow_dispatch:
+    # Manual trigger option for testing/debugging
+    inputs:
+      run_type:
+        description: 'Type of run (daily, weekly, manual)'
+        required: true
+        default: 'manual'
+        type: choice
+        options:
+          - daily
+          - weekly
+          - manual
+
+env:
+  PAYPAL_EMAIL: naynay.realbusiness@gmail.com
+  NICHЕ: AI_Tools_Productivity
+  LEAD_MAGNET_TITLE: Ultimate_AI_Productivity_Toolkit_2026
+
+jobs:
+  run-automation:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+      
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      
+      - name: Install Dependencies
+        run: |
+          pip install requests python-dotenv
+          # In production, add more dependencies as needed
+          pip install Pillow pypdf
+      
+      - name: Load AI Configuration
+        run: |
+          echo "Loading AI API keys..."
+          if [ -f .ai_config.json ]; then
+            cat .ai_config.json
+          else
+            echo "Config file not found. Using defaults."
+          fi
+      
+      - name: Run Money Maker Agent
+        env:
+          CHATGPT_API_KEY: ${{ secrets.CHATGPT_API_KEY }}
+          CLAUDE_API_KEY: ${{ secrets.CLAUDE_API_KEY }}
+        run: |
+          echo "🚀 Starting Money Maker Automation..."
+          
+          # Run the main automation script
+          python scripts/main/money_maker_agent.py
+      
+      - name: Log Results
+        if: always()
+        run: |
+          echo ""
+          echo "=========================================="
+          echo "AUTOMATION RUN COMPLETE"
+          echo "Timestamp: $(date)"
+          
+          # Display latest stats
+          if [ -f stats.json ]; then
+            cat stats.json
+          else
+            echo "Stats file not found yet..."
+          fi
+      
+      - name: Upload Logs for Analysis
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: automation-logs-${{ github.run_number }}
+          path: |
+            logs/
+            stats.json
+          retention-days: 30
+
+  # Optional: Weekly optimization and A/B testing
+  weekly-optimization:
+    needs: run-automation
+    if: ${{ github.event_name == 'schedule' && (github.schedule_day_of_week == 0 || github.schedule_day_of_week == 6) }}
+    
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+      
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      
+      - name: Run Weekly Optimization Tasks
+        env:
+          CHATGPT_API_KEY: ${{ secrets.CHATGPT_API_KEY }}
+          CLAUDE_API_KEY: ${{ secrets.CLAUDE_API_KEY }}
+        run: |
+          echo "📊 Running weekly optimization analysis..."
+          
+          # In production, this would:
+          # 1. Analyze past week's performance
+          # 2. A/B test new variations
+          # 3. Optimize email subject lines
+          # 4. Update affiliate content based on trends
+          # 5. Reinvest profits into scaling winners
+          
+          python scripts/main/weekly_optimizer.py || echo "Optimization script not yet created"
+      
+      - name: Upload Optimization Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: weekly-optimization-report-${{ github.run_number }}
+          path: |
+            logs/weekly_optimization.log
+            reports/*.pdf
+          retention-days: 90
+
+# Environment variables for GitHub Secrets
+# Set these in repository settings > Secrets and Variables > Actions:
+# - CHATGPT_API_KEY: Your ChatGPT API key (sk-proj-...)
+# - CLAUDE_API_KEY: Your Claude API key (sk-ant-usr-...)
