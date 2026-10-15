@@ -1,0 +1,34 @@
+name: Money Maker Agent - Draft Generation
+on:
+  schedule:
+    - cron: '0 */6 * * *'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: money-maker-drafts
+  cancel-in-progress: false
+jobs:
+  run-automation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Run tests
+        run: python -m unittest discover -s tests -v
+      - name: Generate drafts
+        run: python scripts/main/money_maker_agent.py
+      - name: Upload run output
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: money-maker-output-${{ github.run_number }}
+          path: |
+            logs/
+            stats.json
+            content/
+          if-no-files-found: warn
+          retention-days: 30
